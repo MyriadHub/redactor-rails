@@ -4471,7 +4471,11 @@
 					{
 						if (key == this.keyCode.BACKSPACE || key == this.keyCode.DELETE || (key == this.keyCode.ENTER && !e.ctrlKey && !e.shiftKey) || key == this.keyCode.SPACE)
 						{
-							this.buffer.set();
+							// This prevents the deletion of selected text (when using either
+							// DELETE or BACKSPACE). Since I have not found any other usage for
+							// that, I'll comment it out.
+							
+							// this.buffer.set();
 						}
 					}
 				},
