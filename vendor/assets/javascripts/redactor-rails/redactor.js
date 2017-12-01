@@ -1039,9 +1039,44 @@
 				},
 				setUndo: function()
 				{
-					this.selection.save();
+					// Fix bug preventing deletion of selected text : only save & restore the current
+					// selection if there is no selected text (in which case
+					// this.selection only handles the position of the caret)
+					// (see detailed explanation after this method)
+					var hasSelectedText = this.selection.getText().length > 0
+					!hasSelectedText && this.selection.save();
 					this.opts.buffer.push(this.$editor.html());
-					this.selection.restore();
+					!hasSelectedText && this.selection.restore();
+
+
+					/*
+					### SEARCH_ME_1 for hacky bug fix explanation: ###
+
+					When some text is selected and the user presses backspace to
+					delete the selected text, calling this.selection.save before
+					adding the current content to the undo buffer and this.selection.restore
+					afterwards causes a very annoying bug where the text isn't deleted, because
+					restoring the selection immediately re-inserts the deleted texT.
+
+					This has, however, a side-effect bug: when undoing a deletion of some selected text,
+					the caret moves to the beginning of the editor because this.selection also handles
+					the position of the caret.
+
+					A viable approach to fix this bug would be to do the following, just after
+					the this.buffer.set() in the setupBuffer method (see the other SEARCH_ME_1 marker):
+					- when deleting selected text, use this.selection.createMarkers() to create selection
+						markers in the dom
+					- find all text contained in between the selection markers
+					- delete this text from the DOM
+
+					However, this solution sounds very hacky and difficult to implement
+					with handling all edge cases and without causing any regression.
+
+					As of writing (11/2017), the most viable to fix this durably seems to
+					be replacing this old, outdated, unmaintainable redactor with another
+					editor (Redactor's version 1 is not maintained anymore, and the v2
+					is not open source and requires buying a license).
+					*/
 				},
 				setRedo: function()
 				{
@@ -4471,11 +4506,10 @@
 					{
 						if (key == this.keyCode.BACKSPACE || key == this.keyCode.DELETE || (key == this.keyCode.ENTER && !e.ctrlKey && !e.shiftKey) || key == this.keyCode.SPACE)
 						{
-							// This prevents the deletion of selected text (when using either
-							// DELETE or BACKSPACE). Since I have not found any other usage for
-							// that, I'll comment it out.
-							
-							// this.buffer.set();
+							// ### SEARCH_ME_1 for hacky bug fix explanation: ###
+							// This line causes bugs when deleting selected text.
+							// See the other place where the above marker is inserted in this file for a full explanation
+							this.buffer.set();
 						}
 					}
 				},
